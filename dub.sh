@@ -19,9 +19,6 @@ DU_WIDTH=20
 GRAPH_WIDTH=$(( WIDTH - LABEL_WIDTH - DU_WIDTH - (3*MARGIN) ))
 scale=1
 
-# current directory
-# directory=$(pwd)
-
 
 
 ##### FUNCTIONS #####
@@ -33,6 +30,12 @@ fit_to_screen() {
 
 	if [ $max_bar -gt $GRAPH_WIDTH ]; then
 		scale=$(( (max_bar / GRAPH_WIDTH) ))
+
+		#if the division creates a scale factor that won't fit (in some cases), scale down extra
+		if [ $(( max_bar % GRAPH_WIDTH )) -gt 10 ]; then
+			scale=$((scale + 1))
+		fi
+
 	fi
 }
 
