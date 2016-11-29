@@ -142,9 +142,9 @@ print_directory_contents() {
 
 # Add option to run script on a different directory
 if [ "$1" != "" ]; then
-	if [ -d $1 ]; then
-		directory=$1
-		cd $directory
+	if [ -d "$1" ]; then
+		directory="$1"
+		cd "$directory"
 	else
 		echo "  -->  Directory does not exist."
 		exit 1
