@@ -45,9 +45,21 @@ draw_bar() {
 	current_bar_scaled=$((current_bar_size / scale))
 	max_bar_scaled=$((max_bar / scale))
 
-	# draw colored bar (background color)
+	# set bar color (background color)
 	tput setab $color
+
+
+	# DRAW COLORED BAR
+
+	# if the current directory is empty, draw blank
+	if [ $current_bar_size = 0 ]; then
+		tput sgr0	# return color to normal
+	fi
+	# draw the bar
 	printf "%0.s " $(seq 0 $current_bar_scaled)
+
+
+
 	tput sgr0	# return color to normal
 
 	# add space for disk usage number at right
@@ -60,7 +72,7 @@ print_directory_contents() {
 
 	#list of contents in directory and estimated disk usage
 	contents=$(du -kd0 *)
-	contents_names=$(du -d0 * | sed -E 's/[0-9]+//')
+	contents_names=$(du -kd0 * | sed -E 's/[0-9]+//')
 
 	# separate numbers (disk usage) and strings (content names)
 	bar_sizes=$( echo $contents | grep -o -E '[0-9]+' )
