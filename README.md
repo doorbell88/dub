@@ -6,3 +6,6 @@ Creates a bar graph in bash terminal that shows relative disk usage of files/dir
         $ dub [directory]       # shows bar graph of disk usage in [directory]
 
 It's a nice, simple way to visualize how much space your contents are consuming.  Much better and clearer than using $(du) and looking at numbers.  Very useful.
+
+
+![] (https://github.com/doorbell88/dub/blob/master/Screenshots/dub_ScreenShot.png)
