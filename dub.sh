@@ -25,7 +25,8 @@ scale=1
 
 # find longest bar length
 fit_to_screen() {
-	max_bar=$(du -kd0 * | grep -o -E '[0-9]+' | sort -nr | head -n1)
+	#max_bar=$(du -kd0 * | grep -o -E '[0-9]+' | sort -nr | head -n1)
+	max_bar=$(du -kd0 * | awk '{print $1}' | sort -nr | head -n1)
 	number_of_bars=$(du -kd0 * | wc -l | grep -o -E '[0-9]+')
 
 	if [ $max_bar -gt $GRAPH_WIDTH ]; then
