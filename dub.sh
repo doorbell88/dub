@@ -72,11 +72,10 @@ print_directory_contents() {
 
 	#list of contents in directory and estimated disk usage
 	contents=$(du -kd0 *)
-	contents_names=$(du -kd0 * | sed -E 's/[0-9]+//')
 
 	# separate numbers (disk usage) and strings (content names)
-	bar_sizes=$( echo $contents | grep -o -E '[0-9]+' )
-	bar_labels=$contents_names
+	bar_sizes=$(du -kd0 * | awk '{print $1}')
+	bar_labels=$(ls -1)
 
 
 	# MAKE TOP LABEL BAR
@@ -111,7 +110,7 @@ print_directory_contents() {
 
 		# read top line of lists
 		current_bar_size=$(echo -e "$bar_sizes" | head -n1)
-		current_bar_label=$(echo -e "$bar_labels" | head -n1)
+		current_bar_label=$(echo -e "\t$bar_labels" | head -n1)
 
 		# delete top line of lists
 		bar_sizes=$(echo -e "$bar_sizes" | sed 1d)
