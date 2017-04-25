@@ -29,6 +29,9 @@ fit_to_screen() {
 	max_bar=$(du -kd0 * | awk '{print $1}' | sort -nr | head -n1)
 	number_of_bars=$(du -kd0 * | wc -l | grep -o -E '[0-9]+')
 
+	max_label=$(for file in ./*; do echo -n "$file" | wc -m; done | sort -nr | head -n1)
+	LABEL_WIDTH=$max_label
+
 	if [ $max_bar -gt $GRAPH_WIDTH ]; then
 		scale=$(( (max_bar / GRAPH_WIDTH) ))
 
@@ -76,7 +79,7 @@ print_directory_contents() {
 
 	# separate numbers (disk usage) and strings (content names)
 	bar_sizes=$(du -kd0 * | awk '{print $1}')
-	bar_labels=$(ls -1)
+	bar_labels=$(ls -F1)
 
 
 	# MAKE TOP LABEL BAR
@@ -146,16 +149,15 @@ print_directory_contents() {
 
 
 
-
-
-
-
 ##### MAIN #####
 
 # Add option to run script on a different directory
 if [ "$1" != "" ]; then
 	if [ -d "$1" ]; then
 		directory="$1"
+		cd "$directory"
+	elif [ "$1" = "-" ]; then
+		directory="$OLDPWD"
 		cd "$directory"
 	else
 		echo "  -->  Directory does not exist."
@@ -165,14 +167,11 @@ else
 	directory=$PWD
 fi
 
+
 # let user know it is checking (in case it's in a heirearchy that will take a while to $(du) )
 echo -e "\n...\nchecking disk space in $( cd $directory 2>/dev/null | pwd )\n..."
 
-
-
+# print bars, once ready with all the information
 fit_to_screen
-
 print_directory_contents
-
-
 
