@@ -204,9 +204,7 @@ fit_to_screen() {
 # print separator lines
 print_separator() {
 	STAGE_WIDTH=$(( NUMBER_WIDTH + ITEM_WIDTH + BAR_WIDTH + FILESIZE_WIDTH + BUFFER_TOTAL ))
-	echo
 	printf "%0.s-" $(seq 1 $STAGE_WIDTH)
-	echo
 }
 
 #print top label bar
@@ -312,8 +310,10 @@ print_directory_contents() {
 	echo -ne "\n$( cd $directory 2>/dev/null | pwd )"
 	# --------------------------------------------------
 	# print a top line for separation
+	echo
 	print_separator
 	print_top_label_bar
+	echo
 	print_separator
 	# --------------------------------------------------
 
