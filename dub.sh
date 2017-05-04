@@ -21,15 +21,16 @@ NUMBER_WIDTH=4
 FILESIZE_WIDTH=10
 FILESIZE_WIDTH_min=5
 BUFFER=2
+BUFFER_TOTAL=$((3*BUFFER))
 scale=1
 ITEM_WIDTH_min=4
 BAR_WIDTH_min=4
 
 ITEM_WIDTH=20
-ITEM_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - BAR_WIDTH_min - FILESIZE_WIDTH - $((3*BUFFER)) ))
+ITEM_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - BAR_WIDTH_min - FILESIZE_WIDTH - BUFFER_TOTAL ))
 
 BAR_WIDTH=25
-BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH_min - FILESIZE_WIDTH - $((3*BUFFER)) ))
+BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH_min - FILESIZE_WIDTH - BUFFER_TOTAL ))
 
 ###########################################################################
 
@@ -125,13 +126,23 @@ scale_items() {
 	else                                                  # Just right
 		ITEM_WIDTH=$max_item_length
 	fi
+
+    # Ensure ITEM_WIDTH is at least as big as ITEM_WIDTH_min
+    if [ $ITEM_WIDTH -lt $ITEM_WIDTH_min ]; then
+        ITEM_WIDTH=$ITEM_WIDTH_min
+    fi
 }
 
 scale_bars() {
 	trap clean_up SIGINT SIGTERM SIGHUP ERR
 	if [ $max_bar -gt $BAR_WIDTH_max ]; then
-		BAR_WIDTH=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH - FILESIZE_WIDTH - $((3*BUFFER)) ))
+		BAR_WIDTH=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH - FILESIZE_WIDTH - BUFFER_TOTAL ))
 		scale=$(( max_bar / BAR_WIDTH ))
+
+        # avoid dividing by zero
+        if [ $scale -lt 1 ]; then
+            scale=1
+        fi
 		
 		# Check bar width after scaling, and make sure it doesn't spill over
 		BW_check=$(( max_bar / scale ))
@@ -139,10 +150,16 @@ scale_bars() {
 			scale=$((scale+1))
 		fi
 		BAR_WIDTH=$((max_bar / scale))
+
 	elif [ $max_bar -le $BAR_WIDTH ]; then
 		BAR_WIDTH=$max_bar
 		scale=1
 	fi
+
+    # Ensure BAR_WIDTH is at least as big as BAR_WIDTH_min
+    if [ $BAR_WIDTH -lt $BAR_WIDTH_min ]; then
+        BAR_WIDTH=$BAR_WIDTH_min
+    fi
 }
 
 # find longest bar length
@@ -152,13 +169,15 @@ fit_to_screen() {
 	find_longest_filesize
 
 	# if terminal is super small, make spaces smaller
-	STAGE=$(( NUMBER_WIDTH + ITEM_WIDTH_min + BAR_WIDTH_min + FILESIZE_WIDTH + $((3*BUFFER)) ))
+	STAGE=$(( NUMBER_WIDTH + ITEM_WIDTH_min + BAR_WIDTH_min + FILESIZE_WIDTH + BUFFER_TOTAL ))
 	if [ $WIDTH -lt $STAGE ]; then
 		NUMBER_WIDTH=3
 		BUFFER=1
-		STAGE=$(( NUMBER_WIDTH + ITEM_WIDTH_min + BAR_WIDTH_min + FILESIZE_WIDTH + $((3*BUFFER)) ))
+		STAGE=$(( NUMBER_WIDTH + ITEM_WIDTH_min + BAR_WIDTH_min + FILESIZE_WIDTH + BUFFER_TOTAL ))
 		if [ $WIDTH -lt $STAGE ]; then
-			echo "Terminal size too small to display."
+            tput setaf 1
+			echo -e "\nTerminal size too small to display.\n"
+            tput sgr0
 			clean_up
 			exit 1
 		fi
@@ -174,7 +193,7 @@ fit_to_screen() {
 #-------------------------------------------------------------------------------
 # print separator lines
 print_separator() {
-	STAGE_WIDTH=$(( NUMBER_WIDTH + ITEM_WIDTH + BAR_WIDTH + FILESIZE_WIDTH + $((3*BUFFER)) ))
+	STAGE_WIDTH=$(( NUMBER_WIDTH + ITEM_WIDTH + BAR_WIDTH + FILESIZE_WIDTH + BUFFER_TOTAL ))
 	echo
 	printf "%0.s-" $(seq 1 $STAGE_WIDTH)
 	echo
