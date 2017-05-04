@@ -92,9 +92,13 @@ remove_items() {
 
 find_longest_item() {
 	trap clean_up SIGINT SIGTERM SIGHUP ERR
-	du_list=$(<$TEMP_EDIT)
+	#du_list=$(<$TEMP_EDIT)
+	du_list=$(ls -F1)
+	#max_item_length=$(for line in "${du_list}"; do echo -n "$line" \
+	#                  | awk '{$1 = ""; print length($0)}'; done \
+	#                  | sort -nr | head -n1)
 	max_item_length=$(for line in "${du_list}"; do echo -n "$line" \
-	                  | awk '{$1 = ""; print length($0)}'; done \
+	                  | awk '{print length($0)}'; done \
 	                  | sort -nr | head -n1)
 }
 
@@ -135,6 +139,8 @@ scale_items() {
 
 scale_bars() {
 	trap clean_up SIGINT SIGTERM SIGHUP ERR
+
+    # if bars need to be scaled back, scale them
 	if [ $max_bar -gt $BAR_WIDTH_max ]; then
 		BAR_WIDTH=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH - FILESIZE_WIDTH - BUFFER_TOTAL ))
 		scale=$(( max_bar / BAR_WIDTH ))
@@ -151,7 +157,11 @@ scale_bars() {
 		fi
 		BAR_WIDTH=$((max_bar / scale))
 
+    # if bars are very small naturally, make the BAR_WIDTH small
 	elif [ $max_bar -le $BAR_WIDTH ]; then
+		BAR_WIDTH=$max_bar
+		scale=1
+	else
 		BAR_WIDTH=$max_bar
 		scale=1
 	fi
@@ -293,8 +303,9 @@ print_directory_contents() {
 
 	# separate numbers (disk usage) and strings (content names)
 	bar_sizes=$(for line in "${contents}"; do echo -n "$line" | awk '{print $1}'; done)
-	items=$(for line in "${contents}"; do echo -n "$line" \
-	        | awk '{$1 = "" ; print $0}' | sed 's/ //'; done)
+	#items=$(for line in "${contents}"; do echo -n "$line" \
+	#        | awk '{$1 = "" ; print $0}' | sed 's/ //'; done)
+	items=$(ls -F1)
 
 	# MAKE TOP LABEL BAR
 	# print the directory searched
