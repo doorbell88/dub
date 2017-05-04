@@ -46,14 +46,14 @@ clean_up() {
 # show usage message
 usage() {
 	echo
-	echo "---------------------------- dub -------------------------------"
+	echo "------------ dub --------------"
 	echo "Usage:"
 	echo "  dub"
 	echo "  dub [directory]"
 	echo "  dub [-h | --help]"
 	echo
 	echo "Options:"
-	echo "  -h --help    Ignore the files/directories listed as arguments."
+	echo "  -h --help  Show this message."
 	echo
 }
 
