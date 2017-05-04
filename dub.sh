@@ -205,6 +205,7 @@ fit_to_screen() {
 print_separator() {
 	STAGE_WIDTH=$(( NUMBER_WIDTH + ITEM_WIDTH + BAR_WIDTH + FILESIZE_WIDTH + BUFFER_TOTAL ))
 	printf "%0.s-" $(seq 1 $STAGE_WIDTH)
+	echo
 }
 
 #print top label bar
