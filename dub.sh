@@ -46,16 +46,14 @@ clean_up() {
 # show usage message
 usage() {
 	echo
+	echo "---------------------------- dub -------------------------------"
 	echo "Usage:"
 	echo "  dub"
+	echo "  dub [directory]"
 	echo "  dub [-h | --help]"
-	echo "  dub [-i | --ignore] <arg>..."
-	echo "  dub [-o | --only] <arg>..."
-	echo "  dub [-o | --only] <arg>... [[-i | --ignore] <arg>...]"
 	echo
 	echo "Options:"
-	echo "  -i --ignore  Ignore the files/directories listed as arguments."
-	echo "  -o --only    Only show the files/directories listed as arguments."
+	echo "  -h --help    Ignore the files/directories listed as arguments."
 	echo
 }
 
@@ -331,7 +329,10 @@ rm "$TEMP_DIR/$TEMP_NAME.?????" 2>/dev/null
 
 # Add option to run script on a different directory
 if [ "$1" != "" ]; then
-	if [ -d "$1" ]; then
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		usage
+		exit
+	elif [ -d "$1" ]; then
 		directory="$1"
 		cd "$directory"
 	elif [ "$1" = "-" ]; then
@@ -339,6 +340,8 @@ if [ "$1" != "" ]; then
 		cd "$directory"
 	else
 		echo "  -->  Directory does not exist."
+		usage
+		clean_up
 		exit 1
 	fi
 else
