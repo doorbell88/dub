@@ -379,12 +379,12 @@ else
 	directory=$PWD
 fi
 
+# let user know it is checking (in case it's in a heirearchy that will take a while to $(du) )
+echo -e "\n...\nchecking disk space in $( cd $directory 2>/dev/null | pwd )\n..."
+
 # get disk usage info and scale to terminal
 get_du
 fit_to_screen
-
-# let user know it is checking (in case it's in a heirearchy that will take a while to $(du) )
-echo -e "\n...\nchecking disk space in $( cd $directory 2>/dev/null | pwd )\n..."
 
 # print bars, once ready with all the information
 print_directory_contents
