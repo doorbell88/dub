@@ -1,9 +1,14 @@
 # dub
 Creates a bar graph in bash terminal that shows relative disk usage of files/directories in a directory.
 
-    usage:
-        $ dub                   # shows bar graph of disk usage in current directory
-        $ dub [directory]       # shows bar graph of disk usage in [directory]
+    Usage:
+      dub
+      dub [<directory>]
+      dub [-h | --help]
+
+    Options:
+      -h --help    Show this message.
+      <directory>  Show the contents of <directory>
 
 It's a nice, simple way to visualize how much space your contents are consuming.  Much better and clearer than using $(du) and looking at numbers.  Very useful.
 
