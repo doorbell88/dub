@@ -4,54 +4,48 @@
 # and how much memory each one takes
 
 
-##### CONSTANTS #####
-
-TEMP_DIR="/tmp"
-TEMP_NAME="dub"
-TEMP_RAW=$(mktemp $TEMP_DIR/$TEMP_NAME.XXXXX)
-TEMP_EDIT=$(mktemp $TEMP_DIR/$TEMP_NAME.XXXXX)
-
+################################## CONSTANTS ###################################
+#-------------------------------------------------------------------------------
 # width of terminal window
 WIDTH=$(tput cols)
 
+# give scale an initial value
+scale=1
 
-###########################################################################
-# formatting constants
-NUMBER_WIDTH=4
-FILESIZE_WIDTH=10
-FILESIZE_WIDTH_min=5
+# extra space between fields
 BUFFER=2
 BUFFER_TOTAL=$((3*BUFFER))
-scale=1
-ITEM_WIDTH_min=4
-BAR_WIDTH_min=4
 
+# numbering list on the left
+NUMBER_WIDTH=4
+
+# file size (KB) on the right
+FILESIZE_WIDTH_min=5
+FILESIZE_WIDTH=10
+
+# name of file/directory
+ITEM_WIDTH_min=4
 ITEM_WIDTH=20
 ITEM_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - BAR_WIDTH_min - FILESIZE_WIDTH - BUFFER_TOTAL ))
 
+# bar that is drawn
+BAR_WIDTH_min=4
 BAR_WIDTH=25
 BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH_min - FILESIZE_WIDTH - BUFFER_TOTAL ))
 
-###########################################################################
 
-
-##### FUNCTIONS #####
-
+################################## FUNCTIONS ###################################
 #-------------------------------------------------------------------------------
-# clean up nicely
-clean_up() {
-	rm $TEMP_RAW 2>/dev/null
-	rm $TEMP_EDIT 2>/dev/null
-}
-    
-# show usage message
+
+# show help message
 usage() {
+	dub=$(basename $0)
 	echo
-	echo "------------ dub --------------"
+	echo "-------------------- $dub ----------------------"
 	echo "Usage:"
-	echo "  dub"
-	echo "  dub [<directory>]"
-	echo "  dub [-h | --help]"
+	echo "  $dub"
+	echo "  $dub [-h | --help]"
+	echo "  $dub [<directory>]"
 	echo
 	echo "Options:"
 	echo "  -h --help    Show this message."
@@ -59,66 +53,73 @@ usage() {
 	echo
 }
 
-# display an error message
-error_message() {
-	echo -e "\nSomething went wrong.  See usage for help.\n"
+# Process arguments to determine which directory to display
+get_directory() {
+	if [ -d "$*" ]; then
+		directory="$*"
+		cd "$directory"
+	else
+		echo "  -->  Directory does not exist."
+		#usage
+		exit 1
+	fi
 }
 
-# handle an error gracefully before exiting
-error_exit() {
-	clean_up
-	error_message
-	usage
-	exit 1
+# Add option to run script on a different directory
+get_cmd_line_args() {
+	# if no arguments are given, use current directory
+	if [ "$1" = "" ]; then
+		directory=$PWD
+		cd "$directory"
+		return
+	fi
+
+	# process any command line arguments given
+	while [ -n "$1" ]; do
+		case $1 in 
+			-h | --help )   usage
+			                exit
+			                ;;
+			* )             get_directory "$*"
+		esac
+		shift
+	done
 }
 
-# Handle any interrupts gracefully
-trap clean_up SIGINT SIGTERM SIGHUP ERR
 
 #-------------------------------------------------------------------------------
 # get disk usage
 get_du() {
-	trap clean_up SIGINT SIGTERM SIGHUP ERR
+	# make sure directory is not empty
 	if [ -z "$(ls | head -n1 | awk '{print 1}')" ]; then
 		echo "  --->  Directory is empty."
-		clean_up
 		exit 1
+
+	# get disk usage and contents of directory
 	else
-		du -kd0 * > $TEMP_RAW
-		cat $TEMP_RAW > $TEMP_EDIT
+		du_raw=$(du -kd0 *)
+		ls_raw=$(ls -F1)
 	fi
 }
 
-add_items() {
-	return
-}
-
-remove_items() {
-	return
-}
-
 find_longest_item() {
-	trap clean_up SIGINT SIGTERM SIGHUP ERR
-	#du_list=$(<$TEMP_EDIT)
-	du_list=$(ls -F1)
-	#max_item_length=$(for line in "${du_list}"; do echo -n "$line" \
-	#                  | awk '{$1 = ""; print length($0)}'; done \
-	#                  | sort -nr | head -n1)
-	max_item_length=$(for line in "${du_list}"; do echo -n "$line" \
+	# find length of longest item (filename/directory) to write
+	item_list=$ls_raw
+	max_item_length=$(for line in "${item_list}"; do echo -n "$line" \
 	                  | awk '{print length($0)}'; done \
 	                  | sort -nr | head -n1)
 }
 
 find_longest_bar() {
-	trap clean_up SIGINT SIGTERM SIGHUP ERR
-	du_list=$(<$TEMP_EDIT)
+	# find length of longest bar to draw
+	du_list=$du_raw
 	max_bar=$(echo "${du_list}" | awk '{print $1}' | sort -nr | head -n1)
 	number_of_bars=$(echo "${du_list}" | wc -l | grep -o -E '[0-9]+')
 }
 
 find_longest_filesize() {
-	trap clean_up SIGINT SIGTERM SIGHUP ERR
-	du_list=$(<$TEMP_EDIT)
+	# find length of longest filesize (KB) to write
+	du_list=$du_raw
 	FILESIZE_WIDTH=$(for line in "${du_list}"; do echo -n "$line" \
 	                 | awk '{print length($1)}'; done \
 	                 | sort -nr | head -n1)
@@ -129,7 +130,8 @@ find_longest_filesize() {
 }
 
 scale_items() {
-	trap clean_up SIGINT SIGTERM SIGHUP ERR
+	# determine space to write filenames
+	# (this has priority, and should be performed before scaling bars)
 	if [ $max_item_length -gt $ITEM_WIDTH_max ]; then     # Too big
 		ITEM_WIDTH=$ITEM_WIDTH_max
 	elif [ $max_item_length -lt $ITEM_WIDTH_min ]; then   # Too small
@@ -145,8 +147,6 @@ scale_items() {
 }
 
 scale_bars() {
-	trap clean_up SIGINT SIGTERM SIGHUP ERR
-
     # if bars need to be scaled back, scale them
 	if [ $max_bar -gt $BAR_WIDTH_max ]; then
 		BAR_WIDTH=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH - FILESIZE_WIDTH - BUFFER_TOTAL ))
@@ -179,9 +179,7 @@ scale_bars() {
     fi
 }
 
-# find longest bar length
 fit_to_screen() {
-	trap clean_up SIGINT SIGTERM SIGHUP ERR
 	# find length of longest filesize, so scaling of everything else works out
 	find_longest_filesize
 
@@ -195,27 +193,24 @@ fit_to_screen() {
             tput setaf 1
 			echo -e "\nTerminal size too small to display.\n"
             tput sgr0
-			clean_up
 			exit 1
 		fi
 	fi
 
-	find_longest_item
-	find_longest_bar
-	scale_items
-	scale_bars
+	find_longest_item    # file length of longest filename / directory name
+	find_longest_bar     # find largest file / directory (KB)
+	scale_items          # print filenames gets priority, so this is done first
+	scale_bars           # scale the bars after filenames have their space
 }
 
 
 #-------------------------------------------------------------------------------
-# print separator lines
 print_separator() {
 	STAGE_WIDTH=$(( NUMBER_WIDTH + ITEM_WIDTH + BAR_WIDTH + FILESIZE_WIDTH + BUFFER_TOTAL ))
 	printf "%0.s-" $(seq 1 $STAGE_WIDTH)
 	echo
 }
 
-#print top label bar
 print_top_label_bar() {
 	write_number "(#)"
 	write_item "ITEM"
@@ -223,13 +218,12 @@ print_top_label_bar() {
 	write_size "(KB)"
 }
 
-# write item number
 write_buffer() {
 	FORMAT="%-${BUFFER}.${BUFFER}s" 
 	ARGUMENTS=""
 	printf "${FORMAT}" "${ARGUMENTS}"
 }
-# write item number
+
 write_number() {
 	FORMAT="%-${NUMBER_WIDTH}.${NUMBER_WIDTH}s" 
 	ARGUMENTS="$1"
@@ -237,7 +231,6 @@ write_number() {
 	write_buffer
 }
 
-# write item
 write_item() {
 	item_string="${@}"
 	item_length=${#item_string}
@@ -246,8 +239,8 @@ write_item() {
 	if [ $item_length -gt $ITEM_WIDTH ] && \
 	   [ $item_length -gt 10 ] && \
 	   [ $ITEM_WIDTH -gt 9 ]; then
-		start=$((ITEM_WIDTH-9))
-		end="(-5)"
+		start=$((ITEM_WIDTH-8))
+		end="(-4)"
 		short_string="${item_string:0:$start}(..)${item_string:$end}"
 		item_string="$short_string"
 	fi
@@ -258,7 +251,6 @@ write_item() {
 	write_buffer
 }
 
-# write size
 write_SIZE() {
 	FORMAT="%-${BAR_WIDTH}.${BAR_WIDTH}s " 
 	ARGUMENTS="$1"
@@ -266,9 +258,7 @@ write_SIZE() {
 	write_buffer
 }
 
-#draw a colored bar
 draw_bar() {
-	trap clean_up SIGINT SIGTERM SIGHUP ERR
 	current_bar_scaled=$((current_bar_size / scale))
 	max_bar_scaled=$((max_bar / scale))
 
@@ -282,7 +272,7 @@ draw_bar() {
 	fi
 	# draw the bar
 	printf "%0.s " $(seq 0 $current_bar_scaled)
-	tput sgr0	# return color to normal
+	tput sgr0       # return color to normal
 
 	# add space for disk usage number at right
 	printf "%$(( (max_bar_scaled - current_bar_scaled) ))s" ""
@@ -291,7 +281,6 @@ draw_bar() {
 	write_buffer
 }
 
-# write size (KB)
 write_size() {
 	FORMAT="%-.${FILESIZE_WIDTH}s" 
 	ARGUMENTS=$1
@@ -299,19 +288,14 @@ write_size() {
 }
 
 
-
 #-------------------------------------------------------------------------------
-# print contents of current directory
 print_directory_contents() {
-	trap clean_up SIGINT SIGTERM SIGHUP ERR
 	#list of contents in directory and estimated disk usage
-	contents=$(<$TEMP_EDIT)
+	contents=$du_raw
+	items=$ls_raw
 
 	# separate numbers (disk usage) and strings (content names)
 	bar_sizes=$(for line in "${contents}"; do echo -n "$line" | awk '{print $1}'; done)
-	#items=$(for line in "${contents}"; do echo -n "$line" \
-	#        | awk '{$1 = "" ; print $0}' | sed 's/ //'; done)
-	items=$(ls -F1)
 
 	# MAKE TOP LABEL BAR
 	# print the directory searched
@@ -346,15 +330,11 @@ print_directory_contents() {
 		#	color=6
 		#fi
 
-		# Number entries
-		write_number "$i"
-		# write filename or directory name (cuts off extra-long names)
-		write_item "$current_item"
-		#draw colored bar
-		draw_bar
-		#print estimated size (from $(du))
-		write_size "$current_bar_size"
-		echo	#next line
+		write_number "$i"                   # Number entries
+		write_item "$current_item"          # write filename or directory name
+		draw_bar                            # draw colored bar
+		write_size "$current_bar_size"      #print estimated size (from $(du))
+		echo                                #next line
 
 		i=$((i+1))
 
@@ -365,34 +345,14 @@ print_directory_contents() {
 }
 
 
+##################################### MAIN #####################################
+#-------------------------------------------------------------------------------
 
-##### MAIN #####
+# process command line arguments
+get_cmd_line_args "$*"
 
-# remove any old temp files
-rm "$TEMP_DIR/$TEMP_NAME.?????" 2>/dev/null
-
-# Add option to run script on a different directory
-if [ "$1" != "" ]; then
-	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-		usage
-		exit
-	elif [ -d "$1" ]; then
-		directory="$1"
-		cd "$directory"
-	elif [ "$1" = "-" ]; then
-		directory="$OLDPWD"
-		cd "$directory"
-	else
-		echo "  -->  Directory does not exist."
-		usage
-		clean_up
-		exit 1
-	fi
-else
-	directory=$PWD
-fi
-
-# let user know it is checking (in case it's in a heirearchy that will take a while to $(du) )
+# let user know it is checking
+# (in case it's in a heirearchy that will take a while to $(du))
 echo -e "\n...\nchecking disk space in $( cd $directory 2>/dev/null | pwd )\n..."
 
 # get disk usage info and scale to terminal
@@ -401,6 +361,3 @@ fit_to_screen
 
 # print bars, once ready with all the information
 print_directory_contents
-
-# remove temp files
-clean_up
