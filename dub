@@ -78,7 +78,7 @@ trap clean_up SIGINT SIGTERM SIGHUP ERR
 # get disk usage
 get_du() {
 	trap clean_up SIGINT SIGTERM SIGHUP ERR
-	if [ -z $(ls) ]; then
+	if [ -z "$(ls | head -n1 | awk '{print 1}')" ]; then
 		echo "  --->  Directory is empty."
 		clean_up
 		exit 1
@@ -338,6 +338,12 @@ print_directory_contents() {
 
 		# 8 and 9 are not colors... so this is a workaround to use colors 1-7
 		color=$(( (i%7) + 1 ))
+
+		# yellow, green, cyan, blue
+		#color=$(( (i%4) + 2 ))
+		#if [ $color = 5 ]; then
+		#	color=6
+		#fi
 
 		# Number entries
 		write_number "$i"
