@@ -50,11 +50,12 @@ usage() {
 	echo "------------ dub --------------"
 	echo "Usage:"
 	echo "  dub"
-	echo "  dub [directory]"
+	echo "  dub [<directory>]"
 	echo "  dub [-h | --help]"
 	echo
 	echo "Options:"
-	echo "  -h --help  Show this message."
+	echo "  -h --help    Show this message."
+	echo "  <directory>  Show the contents of <directory>"
 	echo
 }
 
