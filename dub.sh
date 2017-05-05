@@ -40,8 +40,8 @@ BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH_min - FILESIZE_WIDTH - BUFFE
 #-------------------------------------------------------------------------------
 # clean up nicely
 clean_up() {
-	rm $TEMP_RAW
-	rm $TEMP_EDIT
+	rm $TEMP_RAW 2>/dev/null
+	rm $TEMP_EDIT 2>/dev/null
 }
     
 # show usage message
