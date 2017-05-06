@@ -1,7 +1,40 @@
 #!/bin/bash
 
-# A Program to show the number of files/directories in a given directory,
-# and how much memory each one takes
+#  +-------------------------------------------------------------------------+
+#  | dub                                                                     |
+#  |                                                                         |
+#  |   --> ("Disk Usage Bars")                                               |
+#  |                                                                         |
+#  | A program to show the number of files/directories in a given directory, |
+#  | and how much memory each one takes.                                     |
+#  +-------------------------------------------------------------------------+
+#                                                                             
+#                                                 Created by:
+#                                                 Kevin Klinkel
+#                                                 Last updated May 2017
+#
+#
+#-------------------------------------------------------------------------------
+# Copyright (c) 2017 Kevin Klinkel, https://github.com/doorbell88/dub
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#-------------------------------------------------------------------------------
 
 
 ################################## CONSTANTS ###################################
@@ -89,7 +122,7 @@ get_cmd_line_args() {
 
 #-------------------------------------------------------------------------------
 # get disk usage
-get_du() {
+get_directory_data() {
     # make sure directory is not empty
     if [ -z "$(ls | head -n1 | awk '{print 1}')" ]; then
         echo "  --->  Directory is empty."
@@ -123,7 +156,7 @@ find_longest_filesize() {
     FILESIZE_WIDTH=$(for line in "${du_list}"; do echo -n "$line" \
                      | awk '{print length($1)}'; done \
                      | sort -nr | head -n1)
-    FILESIZE_WIDTH=$((FILESIZE_WIDTH+2))
+    FILESIZE_WIDTH=$((FILESIZE_WIDTH+1))
     if [ $FILESIZE_WIDTH -lt $FILESIZE_WIDTH_min ]; then
         FILESIZE_WIDTH=$FILESIZE_WIDTH_min
     fi
@@ -150,6 +183,14 @@ scale_bars() {
     # if bars need to be scaled back, scale them
     if [ $max_bar -gt $BAR_WIDTH_max ]; then
         BAR_WIDTH=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH - FILESIZE_WIDTH - BUFFER_TOTAL ))
+
+        # Ensure BAR_WIDTH is at least as big as BAR_WIDTH_min
+        # If it's not, ITEM_WIDTH will have to be resized
+        if [ $BAR_WIDTH -lt $BAR_WIDTH_min ]; then
+            BAR_WIDTH=$BAR_WIDTH_min
+            ITEM_WIDTH=$(( WIDTH - NUMBER_WIDTH - BAR_WIDTH - FILESIZE_WIDTH - BUFFER_TOTAL ))
+        fi
+
         scale=$(( max_bar / BAR_WIDTH ))
 
         # avoid dividing by zero
@@ -214,7 +255,7 @@ print_separator() {
 print_top_label_bar() {
     write_number "(#)"
     write_item "ITEM"
-    write_SIZE "SIZE"
+    write_filesize "SIZE"
     write_size "(KB)"
 }
 
@@ -251,7 +292,7 @@ write_item() {
     write_buffer
 }
 
-write_SIZE() {
+write_filesize() {
     FORMAT="%-${BAR_WIDTH}.${BAR_WIDTH}s " 
     ARGUMENTS="$1"
     printf "${FORMAT}" "${ARGUMENTS}"
@@ -291,11 +332,11 @@ write_size() {
 #-------------------------------------------------------------------------------
 print_directory_contents() {
     #list of contents in directory and estimated disk usage
-    contents=$du_raw
+    du_list=$du_raw
     items=$ls_raw
 
     # separate numbers (disk usage) and strings (content names)
-    bar_sizes=$(for line in "${contents}"; do echo -n "$line" | awk '{print $1}'; done)
+    bar_sizes=$(for line in "${du_list}"; do echo -n "$line" | awk '{print $1}'; done)
 
     # MAKE TOP LABEL BAR
     # print the directory searched
@@ -356,7 +397,7 @@ get_cmd_line_args "$*"
 echo -e "\n...\nchecking disk space in $( cd $directory 2>/dev/null | pwd )\n..."
 
 # get disk usage info and scale to terminal
-get_du
+get_directory_data
 fit_to_screen
 
 # print bars, once ready with all the information
