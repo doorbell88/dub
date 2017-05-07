@@ -1,17 +1,19 @@
 #!/bin/bash
 
 #  +---------------------------------------------------------------------------+
-#  | dub                                                                       |
+#  |                                    dub                                    |
+#  | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - |
+#  |                            ("Disk Usage Bars")                            |
 #  |                                                                           |
-#  |   --> ("Disk Usage Bars")                                                 |
+#  | A program to show the number of files/directories in a given directory,   |
+#  | and how much memory each one takes.                                       |
 #  |                                                                           |
-#  |   A program to show the number of files/directories in a given directory, |
-#  |   and how much memory each one takes.                                     |
+#  | The results of a "du" command are displayed by drawing bars for each      |
+#  | item in the directory, proportional to each item's memory.                |
 #  +---------------------------------------------------------------------------+
 #                                                                             
-#                                                 Created by:
-#                                                 Kevin Klinkel
-#                                                 Last updated May 2017
+#                                  CREATED BY:    Kevin Klinkel
+#                                  UPDATED:       May 7, 2017
 #
 #
 #-------------------------------------------------------------------------------
@@ -39,30 +41,46 @@
 
 ################################## CONSTANTS ###################################
 #-------------------------------------------------------------------------------
+# DIMENSIONS
+
 # width of terminal window
 WIDTH=$(tput cols)
 
-# give scale an initial value
-scale=1
+# formatting dimensions (practical constraints)
+scale=1                 # give scale an initial value
+BUFFER=2                # extra space between fields
+NUMBER_WIDTH_min=3      # numbering list on the left
+ITEM_WIDTH_min=4        # item (eg. filename / directory)
+BAR_WIDTH_min=4         # colored bar to display disk usage
+FILESIZE_WIDTH_min=4    # file size (KB) on the right
 
-# extra space between fields
-BUFFER=2
+# calculate max widths for bar and item 
 BUFFER_TOTAL=$((3*BUFFER))
+ITEM_WIDTH_max=$(( WIDTH - NUMBER_WIDTH_min - BAR_WIDTH_min - FILESIZE_WIDTH_min - BUFFER_TOTAL ))
+BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH_min - ITEM_WIDTH_min - FILESIZE_WIDTH_min - BUFFER_TOTAL ))
 
-# numbering list on the left
-NUMBER_WIDTH=4
+#-------------------------------------------------------------------------------
+# COLORS (for display bars)
+RED=1
+GREEN=2
+YELLOW=3
+BLUE=4
+MAGENTA=5
+CYAN=6
+WHITE=7
+GRAY=8
 
-# file size (KB) on the right
-FILESIZE_WIDTH_min=5
-FILESIZE_WIDTH=10
+# Color order (for display bars)
+C1=$YELLOW
+C2=$GREEN
+C3=$BLUE
+C4=$CYAN
+C5=
+C6=
+C7=
+C8=
 
-# minimum widths for bar and item (eg. filename)
-ITEM_WIDTH_min=4
-BAR_WIDTH_min=4
-
-# calculated max widths for bar and item (eg. filename)
-ITEM_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - BAR_WIDTH_min - FILESIZE_WIDTH - BUFFER_TOTAL ))
-BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH_min - FILESIZE_WIDTH - BUFFER_TOTAL ))
+color=""
 
 
 ################################## FUNCTIONS ###################################
@@ -148,6 +166,17 @@ find_longest_bar() {
     number_of_bars=$(echo "${du_list}" | wc -l | grep -o -E '[0-9]+')
 }
 
+find_longest_number(){
+    # find length of longes item in (#) column
+    ls_list=$ls_raw
+    number_of_bars=$(echo "${ls_list}" | wc -l | grep -o -E '[0-9]+')
+    max_number_length=${#number_of_bars}
+    NUMBER_WIDTH=$max_number_length
+    if [ $NUMBER_WIDTH -lt $NUMBER_WIDTH_min ]; then
+        NUMBER_WIDTH=$NUMBER_WIDTH_min
+    fi
+}
+
 find_longest_filesize() {
     # find length of longest filesize (KB) to write
     du_list=$du_raw
@@ -219,13 +248,13 @@ scale_bars() {
 }
 
 fit_to_screen() {
-    # find length of longest filesize, so scaling of everything else works out
+    # find length of longest filesize and number, so scaling of everything else works out
+    find_longest_number
     find_longest_filesize
 
     # if terminal is super small, make spaces smaller
     STAGE=$(( NUMBER_WIDTH + ITEM_WIDTH_min + BAR_WIDTH_min + FILESIZE_WIDTH + BUFFER_TOTAL ))
     if [ $WIDTH -lt $STAGE ]; then
-        NUMBER_WIDTH=3
         BUFFER=1
         STAGE=$(( NUMBER_WIDTH + ITEM_WIDTH_min + BAR_WIDTH_min + FILESIZE_WIDTH + BUFFER_TOTAL ))
         if [ $WIDTH -lt $STAGE ]; then
@@ -328,6 +357,32 @@ write_size() {
 
 
 #-------------------------------------------------------------------------------
+next_color() {
+    case "$color" in 
+        "$C1" )     color=$C2
+                    ;;
+        "$C2" )     color=$C3
+                    ;;
+        "$C3" )     color=$C4
+                    ;;
+        "$C4" )     color=$C5
+                    ;;
+        "$C5" )     color=$C6
+                    ;;
+        "$C6" )     color=$C7
+                    ;;
+        "$C7" )     color=$C8
+                    ;;
+        "$C8" )     color=$C1
+                    ;;
+    esac
+
+    # return to color 1 if color is an empty string (at end of list)
+    if [ "$color" = "" ]; then
+        color="$C1"
+    fi
+}
+
 print_directory_contents() {
     #list of contents in directory and estimated disk usage
     du_list=$du_raw
@@ -360,15 +415,13 @@ print_directory_contents() {
         bar_sizes=$(echo -e "$bar_sizes" | sed 1d)
         items=$(echo -e "$items" | sed 1d)
 
-        # 8 and 9 are not colors... so this is a workaround to use colors 1-7
-        color=$(( (i%7) + 1 ))
+        # use colors 1-7
+        color=$(( (i%6) + 1 ))
 
-        # yellow, green, cyan, blue
-        #color=$(( (i%4) + 2 ))
-        #if [ $color = 5 ]; then
-        #   color=6
-        #fi
+        # get next color in color progression (defined in beginning of script)
+        #next_color
 
+        # write all the fields in the current line
         write_number "$i"                   # Number entries
         write_item "$current_item"          # write filename or directory name
         draw_bar                            # draw colored bar
