@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#  +-------------------------------------------------------------------------+
-#  | dub                                                                     |
-#  |                                                                         |
-#  |   --> ("Disk Usage Bars")                                               |
-#  |                                                                         |
-#  | A program to show the number of files/directories in a given directory, |
-#  | and how much memory each one takes.                                     |
-#  +-------------------------------------------------------------------------+
+#  +---------------------------------------------------------------------------+
+#  | dub                                                                       |
+#  |                                                                           |
+#  |   --> ("Disk Usage Bars")                                                 |
+#  |                                                                           |
+#  |   A program to show the number of files/directories in a given directory, |
+#  |   and how much memory each one takes.                                     |
+#  +---------------------------------------------------------------------------+
 #                                                                             
 #                                                 Created by:
 #                                                 Kevin Klinkel
@@ -56,14 +56,12 @@ NUMBER_WIDTH=4
 FILESIZE_WIDTH_min=5
 FILESIZE_WIDTH=10
 
-# name of file/directory
+# minimum widths for bar and item (eg. filename)
 ITEM_WIDTH_min=4
-ITEM_WIDTH=20
-ITEM_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - BAR_WIDTH_min - FILESIZE_WIDTH - BUFFER_TOTAL ))
-
-# bar that is drawn
 BAR_WIDTH_min=4
-BAR_WIDTH=25
+
+# calculated max widths for bar and item (eg. filename)
+ITEM_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - BAR_WIDTH_min - FILESIZE_WIDTH - BUFFER_TOTAL ))
 BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH_min - FILESIZE_WIDTH - BUFFER_TOTAL ))
 
 
@@ -255,7 +253,7 @@ print_separator() {
 print_top_label_bar() {
     write_number "(#)"
     write_item "ITEM"
-    write_filesize "SIZE"
+    write_SIZE "SIZE"
     write_size "(KB)"
 }
 
@@ -292,7 +290,7 @@ write_item() {
     write_buffer
 }
 
-write_filesize() {
+write_SIZE() {
     FORMAT="%-${BAR_WIDTH}.${BAR_WIDTH}s " 
     ARGUMENTS="$1"
     printf "${FORMAT}" "${ARGUMENTS}"
