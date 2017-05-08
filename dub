@@ -191,7 +191,6 @@ find_longest_filesize() {
     FILESIZE_WIDTH=$(for line in "${du_list}"; do echo -n "$line" \
                      | awk '{print length($1)}'; done \
                      | sort -nr | head -n1)
-    FILESIZE_WIDTH=$((FILESIZE_WIDTH+1))
     if [ $FILESIZE_WIDTH -lt $FILESIZE_WIDTH_min ]; then
         FILESIZE_WIDTH=$FILESIZE_WIDTH_min
     fi
@@ -330,23 +329,29 @@ write_SIZE() {
 draw_bar() {
     max_bar_scaled=$((max_bar / scale))
     current_bar_scaled=$((current_bar_size / scale))
-    current_bar_shadow=$((max_bar_scaled - current_bar_scaled))
 
-    # set bar color (background color)
+    # set bar color
     tput setab $color
 
-    # DRAW COLORED BAR
-    # if the current directory is empty, draw blank
+    # if the current item is empty, draw blank
     if [ $current_bar_size = 0 ]; then
         tput sgr0   # return color to normal
     fi
 
+    # if the current bar != 0 but gets scaled to 0 --> set it to 1 so it shows
+    if [ $current_bar_scaled = 0 ]; then
+        current_bar_scaled=1
+    fi
+
+    #calculate the empty space to the right of the bar
+    current_bar_shadow=$((max_bar_scaled - current_bar_scaled))
+
     # draw the bar
-    FORMAT="%-${current_bar_scaled}.${current_bar_scaled}s " 
+    FORMAT="%-${current_bar_scaled}.${current_bar_scaled}s" 
     ARGUMENTS=""
     printf "${FORMAT}" "${ARGUMENTS}"
 
-    # add space for disk usage number at right
+    # draw bar shadow
     tput sgr0       # return color to normal
     FORMAT="%-${current_bar_shadow}.${current_bar_shadow}s" 
     ARGUMENTS=""
