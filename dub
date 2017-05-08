@@ -39,6 +39,7 @@
 #-------------------------------------------------------------------------------
 
 
+#-------------------------------------------------------------------------------
 ################################## CONSTANTS ###################################
 #-------------------------------------------------------------------------------
 # DIMENSIONS
@@ -71,6 +72,10 @@ WHITE=7
 GRAY=8
 
 # Color order (for display bars)
+#
+# --> YOU CAN EDIT THESE TO CUSTOMIZE WHAT COLORS (AND IN WHAT ORDER) YOU WANT
+#     THE BARS TO DISPLAY IN
+#
 C1=$YELLOW
 C2=$GREEN
 C3=$BLUE
@@ -80,12 +85,15 @@ C6=
 C7=
 C8=
 
+# give initial value for $color as empty string
 color=""
 
 
+#-------------------------------------------------------------------------------
 ################################## FUNCTIONS ###################################
 #-------------------------------------------------------------------------------
-
+                                  
+#--------------------------------- User Input ----------------------------------
 # show help message
 usage() {
     dub=$(basename $0)
@@ -136,7 +144,7 @@ get_cmd_line_args() {
 }
 
 
-#-------------------------------------------------------------------------------
+#----------------------------- Fitting to Screen -------------------------------
 # get disk usage
 get_directory_data() {
     # make sure directory is not empty
@@ -148,6 +156,17 @@ get_directory_data() {
     else
         du_raw=$(du -kd0 *)
         ls_raw=$(ls -F1)
+    fi
+}
+
+find_longest_number(){
+    # find length of longes item in (#) column
+    ls_list=$ls_raw
+    number_of_bars=$(echo "${ls_list}" | wc -l | grep -o -E '[0-9]+')
+    max_number_length=${#number_of_bars}
+    NUMBER_WIDTH=$max_number_length
+    if [ $NUMBER_WIDTH -lt $NUMBER_WIDTH_min ]; then
+        NUMBER_WIDTH=$NUMBER_WIDTH_min
     fi
 }
 
@@ -164,17 +183,6 @@ find_longest_bar() {
     du_list=$du_raw
     max_bar=$(echo "${du_list}" | awk '{print $1}' | sort -nr | head -n1)
     number_of_bars=$(echo "${du_list}" | wc -l | grep -o -E '[0-9]+')
-}
-
-find_longest_number(){
-    # find length of longes item in (#) column
-    ls_list=$ls_raw
-    number_of_bars=$(echo "${ls_list}" | wc -l | grep -o -E '[0-9]+')
-    max_number_length=${#number_of_bars}
-    NUMBER_WIDTH=$max_number_length
-    if [ $NUMBER_WIDTH -lt $NUMBER_WIDTH_min ]; then
-        NUMBER_WIDTH=$NUMBER_WIDTH_min
-    fi
 }
 
 find_longest_filesize() {
@@ -272,18 +280,11 @@ fit_to_screen() {
 }
 
 
-#-------------------------------------------------------------------------------
+#------------------------------ Printing Fields --------------------------------
 print_separator() {
     STAGE_WIDTH=$(( NUMBER_WIDTH + ITEM_WIDTH + BAR_WIDTH + FILESIZE_WIDTH + BUFFER_TOTAL ))
     printf "%0.s-" $(seq 1 $STAGE_WIDTH)
     echo
-}
-
-print_top_label_bar() {
-    write_number "(#)"
-    write_item "ITEM"
-    write_SIZE "SIZE"
-    write_size "(KB)"
 }
 
 write_buffer() {
@@ -356,7 +357,14 @@ write_size() {
 }
 
 
-#-------------------------------------------------------------------------------
+#------------------------------------ Main -------------------------------------
+print_top_label_bar() {
+    write_number "(#)"
+    write_item "ITEM"
+    write_SIZE "SIZE"
+    write_size "(KB)"
+}
+
 next_color() {
     case "$color" in 
         "$C1" )     color=$C2
@@ -437,14 +445,14 @@ print_directory_contents() {
 }
 
 
+#-------------------------------------------------------------------------------
 ##################################### MAIN #####################################
 #-------------------------------------------------------------------------------
 
 # process command line arguments
 get_cmd_line_args "$*"
 
-# let user know it is checking
-# (in case it's in a heirearchy that will take a while to $(du))
+# let user know it is checking (while the user waits)
 echo -e "\n...\nchecking disk space in $( cd $directory 2>/dev/null | pwd )\n..."
 
 # get disk usage info and scale to terminal
