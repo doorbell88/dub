@@ -283,7 +283,7 @@ fit_to_screen() {
 #------------------------------ Printing Fields --------------------------------
 print_separator() {
     STAGE_WIDTH=$(( NUMBER_WIDTH + ITEM_WIDTH + BAR_WIDTH + FILESIZE_WIDTH + BUFFER_TOTAL ))
-    printf "%0.s-" $(seq 1 $STAGE_WIDTH)
+    printf "%0.s-" $(seq 0 $STAGE_WIDTH)
     echo
 }
 
@@ -321,15 +321,16 @@ write_item() {
 }
 
 write_SIZE() {
-    FORMAT="%-${BAR_WIDTH}.${BAR_WIDTH}s " 
+    FORMAT="%-${BAR_WIDTH}.${BAR_WIDTH}s" 
     ARGUMENTS="$1"
     printf "${FORMAT}" "${ARGUMENTS}"
     write_buffer
 }
 
 draw_bar() {
-    current_bar_scaled=$((current_bar_size / scale))
     max_bar_scaled=$((max_bar / scale))
+    current_bar_scaled=$((current_bar_size / scale))
+    current_bar_shadow=$((max_bar_scaled - current_bar_scaled))
 
     # set bar color (background color)
     tput setab $color
@@ -339,12 +340,17 @@ draw_bar() {
     if [ $current_bar_size = 0 ]; then
         tput sgr0   # return color to normal
     fi
+
     # draw the bar
-    printf "%0.s " $(seq 0 $current_bar_scaled)
-    tput sgr0       # return color to normal
+    FORMAT="%-${current_bar_scaled}.${current_bar_scaled}s " 
+    ARGUMENTS=""
+    printf "${FORMAT}" "${ARGUMENTS}"
 
     # add space for disk usage number at right
-    printf "%$(( (max_bar_scaled - current_bar_scaled) ))s" ""
+    tput sgr0       # return color to normal
+    FORMAT="%-${current_bar_shadow}.${current_bar_shadow}s" 
+    ARGUMENTS=""
+    printf "${FORMAT}" "${ARGUMENTS}"
 
     # add a buffer space
     write_buffer
