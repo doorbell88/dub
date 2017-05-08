@@ -1,0 +1,17 @@
+--------------------------------------------------------------------------------
+WISHLIST -- FUTURE UPDATES
+--------------------------------------------------------------------------------
+
+Add column at end of bars
+    - so it's easier to tell which bar is the longest,
+      and how far behind the next longest bar is
+
+Add command line options
+    - [-i | --ignore]  --> Ignore given filenames/directories(/regex?)
+                           That way, if one bar is huge and the rest are all
+                           tiny, you can ignore the huge bar and see how all the
+                           other, smaller files compare to each other
+
+    - [-o | --only]    --> Only display given filenames/directories/(/regex?)
+                           That way you can compare how select items compare in
+                           size (even if they are in different directories)
