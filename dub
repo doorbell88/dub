@@ -240,8 +240,8 @@ scale_bars() {
         BAR_WIDTH=$((max_bar / scale))
 
     # if bars are very small naturally, make the BAR_WIDTH small
-    elif [ $max_bar -le $BAR_WIDTH ]; then
-        BAR_WIDTH=$max_bar
+    elif [ $max_bar -le $BAR_WIDTH_min ]; then
+        BAR_WIDTH=$BAR_WIDTH_min
         scale=1
     else
         BAR_WIDTH=$max_bar
