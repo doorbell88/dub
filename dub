@@ -442,17 +442,17 @@ print_directory_contents() {
         #next_color
 
         # write all the fields in the current line
-        write_number "$i"                   # Number entries
+        write_number "$i"                   # number entries
         write_item "$current_item"          # write filename or directory name
         draw_bar                            # draw colored bar
-        write_size "$current_bar_size"      #print estimated size (from $(du))
-        echo                                #next line
+        write_size "$current_bar_size"      # print estimated size (from $(du))
+        echo                                # (next line)
 
         i=$((i+1))
 
     done
 
-    # print a bottom line for separation
+    # --------------------------------------------------
     print_separator
 }
 
