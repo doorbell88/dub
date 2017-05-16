@@ -246,7 +246,7 @@ scale_bars() {
         BAR_WIDTH=$BAR_WIDTH_min
         scale=1
 
-    # if bars are very small naturally, make the BAR_WIDTH small
+    # if bars will fit as they are, set scale=1
     else
         BAR_WIDTH=$max_bar
         scale=1
