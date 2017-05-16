@@ -215,8 +215,9 @@ scale_items() {
 
 scale_bars() {
     # if bars need to be scaled back, scale them
+    BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH - FILESIZE_WIDTH - BUFFER_TOTAL ))
     if [ $max_bar -gt $BAR_WIDTH_max ]; then
-        BAR_WIDTH=$(( WIDTH - NUMBER_WIDTH - ITEM_WIDTH - FILESIZE_WIDTH - BUFFER_TOTAL ))
+        BAR_WIDTH=$BAR_WIDTH_max
 
         # Ensure BAR_WIDTH is at least as big as BAR_WIDTH_min
         # If it's not, ITEM_WIDTH will have to be resized
@@ -225,6 +226,7 @@ scale_bars() {
             ITEM_WIDTH=$(( WIDTH - NUMBER_WIDTH - BAR_WIDTH - FILESIZE_WIDTH - BUFFER_TOTAL ))
         fi
 
+        # factor for scaling back bar widths
         scale=$(( max_bar / BAR_WIDTH ))
 
         # avoid dividing by zero
@@ -243,6 +245,8 @@ scale_bars() {
     elif [ $max_bar -le $BAR_WIDTH_min ]; then
         BAR_WIDTH=$BAR_WIDTH_min
         scale=1
+
+    # if bars are very small naturally, make the BAR_WIDTH small
     else
         BAR_WIDTH=$max_bar
         scale=1
@@ -251,6 +255,7 @@ scale_bars() {
     # Ensure BAR_WIDTH is at least as big as BAR_WIDTH_min
     if [ $BAR_WIDTH -lt $BAR_WIDTH_min ]; then
         BAR_WIDTH=$BAR_WIDTH_min
+        ITEM_WIDTH=$(( WIDTH - NUMBER_WIDTH - BAR_WIDTH - FILESIZE_WIDTH - BUFFER_TOTAL ))
     fi
 }
 
