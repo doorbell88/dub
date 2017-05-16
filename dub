@@ -370,10 +370,16 @@ write_size() {
 
 #------------------------------------ Main -------------------------------------
 print_top_label_bar() {
+    echo
+    print_separator
+    # --------------------------------------------------
     write_number "(#)"
     write_item "ITEM"
     write_SIZE "SIZE"
     write_size "(KB)"
+    # --------------------------------------------------
+    echo
+    print_separator
 }
 
 next_color() {
@@ -414,12 +420,7 @@ print_directory_contents() {
     # print the directory searched
     echo -ne "\n$( cd $directory 2>/dev/null | pwd )"
     # --------------------------------------------------
-    # print a top line for separation
-    echo
-    print_separator
     print_top_label_bar
-    echo
-    print_separator
     # --------------------------------------------------
 
     # loop through directories and print results
