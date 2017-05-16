@@ -344,7 +344,7 @@ draw_bar() {
     fi
 
     #calculate the empty space to the right of the bar
-    current_bar_shadow=$((max_bar_scaled - current_bar_scaled))
+    current_bar_shadow=$((BAR_WIDTH - current_bar_scaled))
 
     # draw the bar
     FORMAT="%-${current_bar_scaled}.${current_bar_scaled}s" 
