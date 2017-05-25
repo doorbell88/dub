@@ -13,7 +13,7 @@
 #  +---------------------------------------------------------------------------+
 #                                                                             
 #                                  CREATED BY:    Kevin Klinkel
-#                                  UPDATED:       May 7, 2017
+#                                  UPDATED:       May 25, 2017
 #
 #
 #-------------------------------------------------------------------------------
@@ -60,6 +60,13 @@ BUFFER_TOTAL=$((3*BUFFER))
 ITEM_WIDTH_max=$(( WIDTH - NUMBER_WIDTH_min - BAR_WIDTH_min - FILESIZE_WIDTH_min - BUFFER_TOTAL ))
 BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH_min - ITEM_WIDTH_min - FILESIZE_WIDTH_min - BUFFER_TOTAL ))
 
+# define string shortening parameters
+beginning_min=3
+ellipsis="(..)"
+end="(-4)"
+MIN_SHORTENING_WIDTH=$((beginning_min + ${#ellipsis} - end))
+min_shortening_chars=$((MIN_SHORTENING_WIDTH + 1))
+ 
 #-------------------------------------------------------------------------------
 # COLORS (for display bars)
 RED=1
@@ -306,20 +313,36 @@ write_number() {
 
 write_item() {
     item_string="${@}"
-    item_length=${#item_string}
+    item_chars=$(echo -n "$item_string" | wc -m)
 
-    # shorten item string, if necessary
-    if [ $item_length -gt $ITEM_WIDTH ] && \
-       [ $item_length -gt 10 ] && \
-       [ $ITEM_WIDTH -gt 9 ]; then
-        start=$((ITEM_WIDTH-8))
-        end="(-4)"
-        short_string="${item_string:0:$start}(..)${item_string:$end}"
+    # shorten item string with ellipsis, if necessary
+    if [ $item_chars -gt $ITEM_WIDTH ] && \
+       [ $item_chars -gt $min_shortening_chars ] && \
+       [ $ITEM_WIDTH -gt $MIN_SHORTENING_WIDTH ]; then
+
+        # define starting slice
+        start=$((ITEM_WIDTH - ${#ellipsis} + end))
+
+        # shorten string
+        short_string="${item_string:0:$start}${ellipsis}${item_string:$end}"
+        short_chars=$(echo -n "$short_string" | wc -m)
         item_string="$short_string"
     fi
 
-    FORMAT="%-${ITEM_WIDTH}.${ITEM_WIDTH}s" 
-    ARGUMENTS=$item_string
+    # slice string from beginning to ITEM_WIDTH -- (to catch multibyte
+    # characters in printable range if it was not shortened with ellipsis)
+    item_string="${item_string:0:$ITEM_WIDTH}"
+
+    # get difference between byte length and character length, to (try to)
+    # accommodate multibyte characters with printf
+    # ...(so far doesn't really work)
+    item_chars=$(echo -n "$item_string" | wc -m)
+    item_bytes=$(echo -n "$item_string" | wc -c)
+    item_diff=$((item_bytes - item_chars))
+    ITEM_WIDTH_CORRECTED=$((ITEM_WIDTH + item_diff))
+
+    FORMAT="%-${ITEM_WIDTH_CORRECTED}.${ITEM_WIDTH_CORRECTED}s" 
+    ARGUMENTS="$item_string"
     printf "${FORMAT}" "${ARGUMENTS}"
     write_buffer
 }
