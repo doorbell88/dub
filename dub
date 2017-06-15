@@ -161,7 +161,23 @@ get_directory_data() {
 
     # get disk usage and contents of directory
     else
-        du_raw=$(du -kd0 *)
+        # works in Linux - shows down to 1K precision
+        du_1k="du -d0 -bk *"
+        # works on all platforms - shows down to 4K precision
+        du_4k="du -kd0 *"
+
+        # Try 1K (Linux) version first, and if it throws an error
+        # use the 4L (All platforms) version
+        du_raw=$( $du_1k * &>/dev/null && $du_1k \
+                  || $du_4k )
+
+        # Get ls data with indicators appended to each item:
+        #   directory/          /
+        #   executable*         *
+        #   symbolic_link@      @
+        #   socket=             =
+        #   whiteout%           %
+        #   pipe(FIFO)|         |
         ls_raw=$(ls -F1)
     fi
 }
