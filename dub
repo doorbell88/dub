@@ -11,24 +11,24 @@
 #  | The results of a "du" command are displayed by drawing bars for each      |
 #  | item in the directory, proportional to each item's memory.                |
 #  +---------------------------------------------------------------------------+
-#                                                                             
+#
 #                                  CREATED BY:    Kevin Klinkel
-#                                  UPDATED:       June 15, 2017
+#                                  UPDATED:       August 7, 2017
 #
 #
 #-------------------------------------------------------------------------------
 # Copyright (c) 2017 Kevin Klinkel, https://github.com/doorbell88/dub
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -51,11 +51,11 @@ WIDTH=$(tput cols)
 scale=1                 # give scale an initial value
 BUFFER=2                # extra space between fields
 NUMBER_WIDTH_min=3      # numbering list on the left
-ITEM_WIDTH_min=4        # item (eg. filename / directory)
+ITEM_WIDTH_min=5        # item (eg. filename / directory)
 BAR_WIDTH_min=4         # colored bar to display disk usage
-FILESIZE_WIDTH_min=4    # file size (KB) on the right
+FILESIZE_WIDTH_min=3    # file size (KB) on the right
 
-# calculate max widths for bar and item 
+# calculate max widths for bar and item
 BUFFER_TOTAL=$((3*BUFFER))
 ITEM_WIDTH_max=$(( WIDTH - NUMBER_WIDTH_min - BAR_WIDTH_min - FILESIZE_WIDTH_min - BUFFER_TOTAL ))
 BAR_WIDTH_max=$(( WIDTH - NUMBER_WIDTH_min - ITEM_WIDTH_min - FILESIZE_WIDTH_min - BUFFER_TOTAL ))
@@ -66,7 +66,7 @@ ellipsis="(..)"
 end="(-4)"
 MIN_SHORTENING_WIDTH=$((beginning_min + ${#ellipsis} - end))
 min_shortening_chars=$((MIN_SHORTENING_WIDTH + 1))
- 
+
 #-------------------------------------------------------------------------------
 # COLORS (for display bars)
 RED=1
@@ -99,7 +99,7 @@ color=""
 #-------------------------------------------------------------------------------
 ################################## FUNCTIONS ###################################
 #-------------------------------------------------------------------------------
-                                  
+
 #--------------------------------- User Input ----------------------------------
 # show help message
 usage() {
@@ -140,7 +140,7 @@ get_cmd_line_args() {
 
     # process any command line arguments given
     while [ -n "$1" ]; do
-        case $1 in 
+        case $1 in
             -h | --help )   usage
                             exit
                             ;;
@@ -179,6 +179,9 @@ get_directory_data() {
         #   whiteout%           %
         #   pipe(FIFO)|         |
         ls_raw=$(ls -F1)
+
+        # get total size of directory being queried
+        du_total=$(du -kd0 | awk '{print $1}')
     fi
 }
 
@@ -210,10 +213,18 @@ find_longest_bar() {
 
 find_longest_filesize() {
     # find length of longest filesize (KB) to write
-    du_list=$du_raw
-    FILESIZE_WIDTH=$(for line in "${du_list}"; do echo -n "$line" \
-                     | awk '{print length($1)}'; done \
-                     | sort -nr | head -n1)
+    #du_list=$du_raw
+    #FILESIZE_WIDTH_NC=$(for line in "${du_list}"; do echo -n "$line" \
+    #                    | awk '{print length($1)}'; done \
+    #                    | sort -nr | head -n1)
+
+    FILESIZE_WIDTH_NC=${#du_total}
+
+    # add length filesize string will be with commas (eg. 1,234,567)
+    COMMAS=$(( (FILESIZE_WIDTH_NC - 1) / 3 ))
+    FILESIZE_WIDTH=$((FILESIZE_WIDTH_NC + COMMAS))
+
+    # make sure FILESIZE_WIDTH is at least the minimum required length
     if [ $FILESIZE_WIDTH -lt $FILESIZE_WIDTH_min ]; then
         FILESIZE_WIDTH=$FILESIZE_WIDTH_min
     fi
@@ -256,7 +267,7 @@ scale_bars() {
         if [ $scale -lt 1 ]; then
             scale=1
         fi
-        
+
         # Check bar width after scaling, and make sure it doesn't spill over
         BW_check=$(( max_bar / scale ))
         if [ $BW_check -gt $BAR_WIDTH ]; then
@@ -315,13 +326,13 @@ print_separator() {
 }
 
 write_buffer() {
-    FORMAT="%-${BUFFER}.${BUFFER}s" 
+    FORMAT="%-${BUFFER}.${BUFFER}s"
     ARGUMENTS=""
     printf "${FORMAT}" "${ARGUMENTS}"
 }
 
 write_number() {
-    FORMAT="%-${NUMBER_WIDTH}.${NUMBER_WIDTH}s" 
+    FORMAT="%-${NUMBER_WIDTH}.${NUMBER_WIDTH}s"
     ARGUMENTS="$1"
     printf "${FORMAT}" "${ARGUMENTS}"
     write_buffer
@@ -357,14 +368,14 @@ write_item() {
     item_diff=$((item_bytes - item_chars))
     ITEM_WIDTH_CORRECTED=$((ITEM_WIDTH + item_diff))
 
-    FORMAT="%-${ITEM_WIDTH_CORRECTED}.${ITEM_WIDTH_CORRECTED}s" 
+    FORMAT="%-${ITEM_WIDTH_CORRECTED}.${ITEM_WIDTH_CORRECTED}s"
     ARGUMENTS="$item_string"
     printf "${FORMAT}" "${ARGUMENTS}"
     write_buffer
 }
 
 write_SIZE() {
-    FORMAT="%-${BAR_WIDTH}.${BAR_WIDTH}s" 
+    FORMAT="%-${BAR_WIDTH}.${BAR_WIDTH}s"
     ARGUMENTS="$1"
     printf "${FORMAT}" "${ARGUMENTS}"
     write_buffer
@@ -372,6 +383,7 @@ write_SIZE() {
 
 draw_bar() {
     max_bar_scaled=$((max_bar / scale))
+    current_bar_size=$1
     current_bar_scaled=$((current_bar_size / scale))
 
     # set bar color
@@ -391,13 +403,13 @@ draw_bar() {
     current_bar_shadow=$((BAR_WIDTH - current_bar_scaled))
 
     # draw the bar
-    FORMAT="%-${current_bar_scaled}.${current_bar_scaled}s" 
+    FORMAT="%-${current_bar_scaled}.${current_bar_scaled}s"
     ARGUMENTS=""
     printf "${FORMAT}" "${ARGUMENTS}"
 
     # draw bar shadow
     tput sgr0       # return color to normal
-    FORMAT="%-${current_bar_shadow}.${current_bar_shadow}s" 
+    FORMAT="%-${current_bar_shadow}.${current_bar_shadow}s"
     ARGUMENTS=""
     printf "${FORMAT}" "${ARGUMENTS}"
 
@@ -405,10 +417,25 @@ draw_bar() {
     write_buffer
 }
 
-write_size() {
-    FORMAT="%-.${FILESIZE_WIDTH}s" 
+write_size_title() {
+    FORMAT="%${FILESIZE_WIDTH}s"
     ARGUMENTS=$1
     printf "${FORMAT}" "${ARGUMENTS}"
+}
+
+write_size() {
+    RIGHT_FORMAT="%${FILESIZE_WIDTH}s"
+    COMMA_FORMAT="%'d"
+    ARGUMENTS=$1
+    printf "${RIGHT_FORMAT}" "$(printf ${COMMA_FORMAT} ${ARGUMENTS})"
+}
+
+write_total_directory_usage() {
+    write_number ""                     # number entries
+    write_item "TOTAL"                  # write filename or directory name
+    draw_bar 0                          # draw colored bar (empty)
+    write_size "$du_total"              # print total directory size
+    echo                                # (next line)
 }
 
 
@@ -420,14 +447,18 @@ print_top_label_bar() {
     write_number "(#)"
     write_item "ITEM"
     write_SIZE "SIZE"
-    write_size "(KB)"
+
+    #write_size_title "(KB)"                                # (original title)
+    filesize_string="EEE,PPP,TTT,GGG,MMM,KKK"                       # filesize names
+    filesize_end="(-$FILESIZE_WIDTH)"                       # negative slice
+    write_size_title "${filesize_string:$filesize_end}"     # filesize slize
     # --------------------------------------------------
     echo
     print_separator
 }
 
 next_color() {
-    case "$color" in 
+    case "$color" in
         "$C1" )     color=$C2
                     ;;
         "$C2" )     color=$C3
@@ -488,7 +519,7 @@ print_directory_contents() {
         # write all the fields in the current line
         write_number "$i"                   # number entries
         write_item "$current_item"          # write filename or directory name
-        draw_bar                            # draw colored bar
+        draw_bar "$current_bar_size"        # draw colored bar
         write_size "$current_bar_size"      # print estimated size (from $(du))
         echo                                # (next line)
 
@@ -498,6 +529,9 @@ print_directory_contents() {
 
     # --------------------------------------------------
     print_separator
+    write_total_directory_usage
+    print_separator
+    # --------------------------------------------------
 }
 
 
