@@ -543,7 +543,7 @@ print_directory_contents() {
 get_cmd_line_args "$*"
 
 # let user know it is checking (while the user waits)
-echo -e "\n...\nchecking disk space in $( cd $directory 2>/dev/null | pwd )\n..."
+echo -e "\n...\nchecking disk space in: \n$( cd $directory 2>/dev/null | pwd )\n..."
 
 # get disk usage info and scale to terminal
 get_directory_data
